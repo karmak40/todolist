@@ -113,7 +113,12 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       final index = allTasks.indexOf(task);
       if (index != -1) {
-        allTasks[index] = task.copyWith(isCompleted: !task.isCompleted);
+        final updatedTask = task.copyWith(isCompleted: !task.isCompleted);
+        allTasks[index] = updatedTask;
+        // Если задание привязано к доске, обновляем его там
+        if (task.boardId != null) {
+          boardProvider.updateTaskInBoard(task.boardId!, updatedTask);
+        }
       }
     });
   }
@@ -121,6 +126,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void addTask(Task newTask) {
     setState(() {
       allTasks.add(newTask);
+      // Если задание привязано к доске, добавляем его туда
+      if (newTask.boardId != null) {
+        boardProvider.addTaskToBoard(newTask.boardId!, newTask);
+      }
     });
   }
 
@@ -401,13 +410,16 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             // Week navigation (only show for Tasks tab)
             if (currentPageIndex == 0)
-              WeekNavigation(
-                selectedDate: selectedDate,
-                onDateChanged: (date) {
-                  setState(() {
-                    selectedDate = date;
-                  });
-                },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: WeekNavigation(
+                  selectedDate: selectedDate,
+                  onDateChanged: (date) {
+                    setState(() {
+                      selectedDate = date;
+                    });
+                  },
+                ),
               ),
             // PageView for smooth sliding
             Expanded(

@@ -50,4 +50,18 @@ class BoardProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void updateTaskInBoard(String boardId, Task updatedTask) {
+    final boardIndex = _boards.indexWhere((board) => board.id == boardId);
+    if (boardIndex != -1) {
+      final board = _boards[boardIndex];
+      final taskIndex = board.tasks.indexWhere((t) => t.id == updatedTask.id);
+      if (taskIndex != -1) {
+        final updatedTasks = [...board.tasks];
+        updatedTasks[taskIndex] = updatedTask;
+        _boards[boardIndex] = board.copyWith(tasks: updatedTasks);
+        notifyListeners();
+      }
+    }
+  }
 }
