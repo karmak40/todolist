@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         children: [
                           Text(
-                            'Доска',
+                            'Доска (${boardProvider.boards.length})',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -378,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                                 
-                                if (result == true) {
+                                if (result != null) {
                                   toggleTaskCompletion(task);
                                 }
                               },

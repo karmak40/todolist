@@ -19,19 +19,23 @@ class TaskDetailScreen extends StatefulWidget {
 }
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
-  late ValueNotifier<double> sliderValue;
+  late ValueNotifier<double> completeSliderValue;
+  late ValueNotifier<double> cancelSliderValue;
   bool showCompleted = false;
-  bool isCompletingTask = false;
+  bool taskCompleted = false; // Track if task was just completed
 
   @override
   void initState() {
     super.initState();
-    sliderValue = ValueNotifier(widget.task.isCompleted ? 1.0 : 0.0);
+    completeSliderValue = ValueNotifier(0.0);
+    cancelSliderValue = ValueNotifier(0.0);
+    taskCompleted = widget.task.isCompleted;
   }
 
   @override
   void dispose() {
-    sliderValue.dispose();
+    completeSliderValue.dispose();
+    cancelSliderValue.dispose();
     super.dispose();
   }
 
@@ -233,98 +237,179 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
               const SizedBox(height: 40),
 
-              // iPhone-style Completion Slider
+              // iPhone-style Sliders - Show only one at a time
               if (!showCompleted)
-                Center(
-                  child: ValueListenableBuilder<double>(
-                    valueListenable: sliderValue,
-                    builder: (context, value, _) {
-                      return GestureDetector(
-                        onHorizontalDragUpdate: (details) {
-                          if (!isCompletingTask) {
-                            sliderValue.value = (sliderValue.value + details.delta.dx / 300).clamp(0, 1);
-                          }
-                        },
-                        onHorizontalDragEnd: (details) {
-                          if (isCompletingTask) return;
-                          
-                          if (sliderValue.value >= 0.95) {
-                            isCompletingTask = true;
-                            setState(() {
-                              showCompleted = true;
-                            });
-                            
-                            // After delay, pop with result true
-                            final nav = Navigator.of(context);
-                            Future.delayed(const Duration(milliseconds: 800), () {
-                              if (mounted) {
-                                nav.pop(true);
-                              }
-                            });
-                          } else {
-                            sliderValue.value = 0;
-                          }
-                        },
-                        child: SizedBox(
-                          width: 280,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: AppConstants.cardBackgroundColor,
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.borderRadiusMedium,
+                if (!taskCompleted)
+                  // Complete Task Slider - Swipe Right
+                  Center(
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: completeSliderValue,
+                      builder: (context, value, _) {
+                        return GestureDetector(
+                          onHorizontalDragUpdate: (details) {
+                            if (details.delta.dx > 0) {
+                              completeSliderValue.value = (completeSliderValue.value + details.delta.dx / 300).clamp(0, 1);
+                            }
+                          },
+                          onHorizontalDragEnd: (details) {
+                            if (completeSliderValue.value >= 0.95) {
+                              setState(() {
+                                showCompleted = true;
+                                taskCompleted = true;
+                              });
+                              
+                              // After delay, pop with result true
+                              final nav = Navigator.of(context);
+                              Future.delayed(const Duration(milliseconds: 800), () {
+                                if (mounted) {
+                                  nav.pop(true);
+                                }
+                              });
+                            } else {
+                              completeSliderValue.value = 0;
+                            }
+                          },
+                          child: SizedBox(
+                            width: 280,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppConstants.cardBackgroundColor,
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.borderRadiusMedium,
+                                ),
                               ),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.centerLeft,
-                              children: [
-                                // Background text
-                                Positioned.fill(
-                                  child: Center(
-                                    child: Text(
-                                      value >= 0.95 
-                                          ? 'Отпустите!' 
-                                          : 'Тяните вправо →',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppConstants.textSecondary,
+                              child: Stack(
+                                alignment: Alignment.centerLeft,
+                                children: [
+                                  // Background text
+                                  Positioned.fill(
+                                    child: Center(
+                                      child: Text(
+                                        value >= 0.95 
+                                            ? 'Отпустите!' 
+                                            : 'Тяните вправо →',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppConstants.textSecondary,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                // Draggable thumb
-                                Align(
-                                  alignment: Alignment(value * 2 - 1, 0),
-                                  child: Container(
-                                    width: 56,
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppConstants.accentColor,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppConstants.accentColor.withValues(alpha: 0.4),
-                                          blurRadius: 8,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_forward,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
+                                  // Draggable thumb
+                                  Align(
+                                    alignment: Alignment(value * 2 - 1, 0),
+                                    child: Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppConstants.accentColor,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppConstants.accentColor.withValues(alpha: 0.4),
+                                            blurRadius: 8,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_forward,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                    },
-                  ),
-                )
+                  )
+                else
+                  // Cancel Task Slider - Swipe Left (shown after task is marked complete)
+                  Center(
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: cancelSliderValue,
+                      builder: (context, value, _) {
+                        return GestureDetector(
+                          onHorizontalDragUpdate: (details) {
+                            if (details.delta.dx < 0) {
+                              cancelSliderValue.value = (cancelSliderValue.value - details.delta.dx / 300).clamp(0, 1);
+                            }
+                          },
+                          onHorizontalDragEnd: (details) {
+                            if (cancelSliderValue.value >= 0.95) {
+                              // Cancel completion and go back
+                              final nav = Navigator.of(context);
+                              nav.pop(false);
+                            } else {
+                              cancelSliderValue.value = 0;
+                            }
+                          },
+                          child: SizedBox(
+                            width: 280,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppConstants.cardBackgroundColor,
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.borderRadiusMedium,
+                                ),
+                              ),
+                              child: Stack(
+                                alignment: Alignment.centerRight,
+                                children: [
+                                  // Background text
+                                  Positioned.fill(
+                                    child: Center(
+                                      child: Text(
+                                        value >= 0.95 
+                                            ? 'Отпустите!' 
+                                            : '← Тяните влево',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppConstants.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  // Draggable thumb
+                                  Align(
+                                    alignment: Alignment(1 - value * 2, 0),
+                                    child: Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.red.withValues(alpha: 0.8),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.red.withValues(alpha: 0.4),
+                                            blurRadius: 8,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_back,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
               else
                 SizedBox(
                   width: double.infinity,

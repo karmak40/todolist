@@ -44,9 +44,9 @@ class AppConstants {
 
   // Board card colors (cycling)
   static const List<Color> boardCardColors = [
-    Color(0xFF6366F1), // Indigo
-    Color(0xFF8B5CF6), // Purple
-    Color(0xFFF59E0B), // Amber
+    Color(0xFF9eecff), // Cyan/Light blue
+    Color(0xFFfff971), // Yellow
+    Color(0xFFffffff), // White
   ];
 
   static Color getBoardCardColor(int index) {
