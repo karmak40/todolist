@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../constants/app_constants.dart';
+import '../providers/board_provider.dart';
 
 class AddTaskDialog extends StatefulWidget {
   final DateTime initialDate;
   final Function(Task) onTaskAdded;
+  final BoardProvider? boardProvider;
+  final String? initialBoardId;
 
   const AddTaskDialog({
     super.key,
     required this.initialDate,
     required this.onTaskAdded,
+    this.boardProvider,
+    this.initialBoardId,
   });
 
   @override
@@ -21,6 +26,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   late TextEditingController descriptionController;
   late TextEditingController durationController;
   late DateTime selectedDate;
+  String? selectedBoardId;
 
   @override
   void initState() {
@@ -29,6 +35,12 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
     descriptionController = TextEditingController();
     durationController = TextEditingController(text: '30');
     selectedDate = widget.initialDate;
+    // Set board based on initialBoardId or first available board
+    if (widget.initialBoardId != null) {
+      selectedBoardId = widget.initialBoardId;
+    } else if (widget.boardProvider != null && widget.boardProvider!.boards.isNotEmpty) {
+      selectedBoardId = widget.boardProvider!.boards.first.id;
+    }
   }
 
   @override
@@ -53,6 +65,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
       description: descriptionController.text,
       durationMinutes: int.tryParse(durationController.text) ?? 30,
       date: selectedDate,
+      boardId: selectedBoardId,
     );
 
     widget.onTaskAdded(task);
@@ -128,6 +141,58 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
+            // Board Dropdown
+            if (widget.boardProvider != null && widget.boardProvider!.boards.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Доска:',
+                    style: TextStyle(
+                      color: AppConstants.textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppConstants.textSecondary),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: DropdownButton<String>(
+                      value: selectedBoardId,
+                      isExpanded: true,
+                      dropdownColor: AppConstants.cardBackgroundColor,
+                      style: const TextStyle(color: AppConstants.textColor),
+                      items: widget.boardProvider!.boards
+                          .map((board) => DropdownMenuItem(
+                                value: board.id,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    children: [
+                                      Text(board.icon, style: const TextStyle(fontSize: 18)),
+                                      const SizedBox(width: 8),
+                                      Text(board.name),
+                                    ],
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedBoardId = value;
+                          });
+                        }
+                      },
+                      underline: const SizedBox(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             Row(
               children: [
                 const Text(

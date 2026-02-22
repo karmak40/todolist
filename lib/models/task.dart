@@ -6,6 +6,7 @@ class Task {
   DateTime date;
   bool isCompleted;
   final String? userIcon; // URL or asset path
+  final String? boardId; // Board reference
 
   Task({
     required this.id,
@@ -15,6 +16,7 @@ class Task {
     required this.date,
     this.isCompleted = false,
     this.userIcon,
+    this.boardId,
   });
 
   // Копирование с изменениями
@@ -26,6 +28,7 @@ class Task {
     DateTime? date,
     bool? isCompleted,
     String? userIcon,
+    String? boardId,
   }) {
     return Task(
       id: id ?? this.id,
@@ -35,6 +38,7 @@ class Task {
       date: date ?? this.date,
       isCompleted: isCompleted ?? this.isCompleted,
       userIcon: userIcon ?? this.userIcon,
+      boardId: boardId ?? this.boardId,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../models/user.dart';
+import '../models/board.dart';
 import '../utils/date_utils.dart';
 import '../widgets/task_card.dart';
 import '../widgets/week_navigation.dart';
@@ -121,6 +122,87 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       allTasks.add(newTask);
     });
+  }
+
+  void _showAddBoardDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final iconController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppConstants.cardBackgroundColor,
+        title: Text(
+          'Добавить доску',
+          style: TextStyle(
+            color: AppConstants.textColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              style: const TextStyle(color: AppConstants.textColor),
+              decoration: InputDecoration(
+                hintText: 'Название доски',
+                hintStyle: const TextStyle(color: AppConstants.textSecondary),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppConstants.textSecondary.withValues(alpha: 0.3)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppConstants.accentColor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: iconController,
+              style: const TextStyle(color: AppConstants.textColor),
+              decoration: InputDecoration(
+                hintText: 'Эмодзи (например: 💼)',
+                hintStyle: const TextStyle(color: AppConstants.textSecondary),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppConstants.textSecondary.withValues(alpha: 0.3)),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: AppConstants.accentColor),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Отмена',
+              style: TextStyle(color: AppConstants.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty) {
+                final newBoard = Board(
+                  id: DateTime.now().toString(),
+                  name: nameController.text,
+                  icon: iconController.text.isEmpty ? '📋' : iconController.text.characters.first,
+                );
+                boardProvider.addBoard(newBoard);
+                Navigator.pop(context);
+                setState(() {});
+              }
+            },
+            child: const Text(
+              'Добавить',
+              style: TextStyle(color: AppConstants.accentColor),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -367,6 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               key: ValueKey(task.id),
                               task: task,
                               index: index,
+                              boardProvider: boardProvider,
                               onTap: () async {
                                 final result = await Navigator.push(
                                   context,
@@ -393,18 +476,28 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => AddTaskDialog(
-              initialDate: selectedDate,
-              onTaskAdded: addTask,
-            ),
-          );
-        },
-        backgroundColor: AppConstants.accentColor,
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: FloatingActionButton(
+          onPressed: () {
+            if (currentPageIndex == 0) {
+              // Tasks tab - add task
+              showDialog(
+                context: context,
+                builder: (context) => AddTaskDialog(
+                  initialDate: selectedDate,
+                  onTaskAdded: addTask,
+                  boardProvider: boardProvider,
+                ),
+              );
+            } else if (currentPageIndex == 1) {
+              // Boards tab - add board
+              _showAddBoardDialog(context);
+            }
+          },
+          backgroundColor: AppConstants.accentColor,
+          child: const Icon(Icons.add),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
