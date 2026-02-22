@@ -10,6 +10,7 @@ import 'dialog_add_task.dart';
 import 'task_detail_screen.dart';
 import 'board_screen.dart';
 import '../providers/board_provider.dart';
+import '../services/storage_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late PageController pageController;
   int currentPageIndex = 0;
   final boardProvider = BoardProvider();
+  final _storageService = StorageService();
 
   // Sample user
   final user = User(
@@ -80,6 +82,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     selectedDate = DateTime.now();
     pageController = PageController();
+    _initializeBoardProvider();
+  }
+
+  Future<void> _initializeBoardProvider() async {
+    await boardProvider.init();
+    await _storageService.init();
+    final loadedTasks = _storageService.getAllTasks();
+    setState(() {
+      if (loadedTasks.isNotEmpty) {
+        allTasks.clear();
+        allTasks.addAll(loadedTasks);
+      }
+    });
   }
 
   @override
@@ -109,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void toggleTaskCompletion(Task task) {
+  Future<void> toggleTaskCompletion(Task task) async {
     setState(() {
       final index = allTasks.indexOf(task);
       if (index != -1) {
@@ -121,9 +136,13 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     });
+    final index = allTasks.indexOf(task);
+    if (index != -1) {
+      await _storageService.saveTask(allTasks[index]);
+    }
   }
 
-  void addTask(Task newTask) {
+  Future<void> addTask(Task newTask) async {
     setState(() {
       allTasks.add(newTask);
       // Если задание привязано к доске, добавляем его туда
@@ -131,6 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
         boardProvider.addTaskToBoard(newTask.boardId!, newTask);
       }
     });
+    await _storageService.saveTask(newTask);
   }
 
   void _showAddBoardDialog(BuildContext context) {
@@ -474,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 );
                                 
                                 if (result != null) {
-                                  toggleTaskCompletion(task);
+                                  await toggleTaskCompletion(task);
                                 }
                               },
                             );

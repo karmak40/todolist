@@ -1,35 +1,57 @@
 import 'package:flutter/material.dart';
 import '../models/board.dart';
 import '../models/task.dart';
+import '../services/storage_service.dart';
 
 class BoardProvider extends ChangeNotifier {
-  final List<Board> _boards = [
-    Board(
-      id: '1',
-      name: 'Спорт',
-      icon: '⚽',
-    ),
-    Board(
-      id: '2',
-      name: 'Работа',
-      icon: '💼',
-    ),
-    Board(
-      id: '3',
-      name: 'Личное',
-      icon: '📝',
-    ),
-  ];
+  late List<Board> _boards = [];
+  final StorageService _storageService = StorageService();
 
   List<Board> get boards => _boards;
 
-  void addBoard(Board board) {
-    _boards.add(board);
+  Future<void> init() async {
+    await _storageService.init();
+    await loadBoards();
+  }
+
+  Future<void> loadBoards() async {
+    _boards = _storageService.getAllBoards();
+    if (_boards.isEmpty) {
+      // Add default boards if empty
+      _boards = [
+        Board(
+          id: '1',
+          name: 'Спорт',
+          icon: '⚽',
+        ),
+        Board(
+          id: '2',
+          name: 'Работа',
+          icon: '💼',
+        ),
+        Board(
+          id: '3',
+          name: 'Личное',
+          icon: '📝',
+        ),
+      ];
+      // Save default boards
+      for (var board in _boards) {
+        await _storageService.saveBoard(board);
+      }
+    }
     notifyListeners();
   }
 
-  void removeBoard(String boardId) {
+  Future<void> addBoard(Board board) async {
+    _boards.add(board);
+    await _storageService.saveBoard(board);
+    notifyListeners();
+  }
+
+  Future<void> removeBoard(String boardId) async {
     _boards.removeWhere((board) => board.id == boardId);
+    await _storageService.deleteBoard(boardId);
     notifyListeners();
   }
 
@@ -41,17 +63,18 @@ class BoardProvider extends ChangeNotifier {
     return board.tasks.where((task) => !task.isCompleted).length;
   }
 
-  void addTaskToBoard(String boardId, Task task) {
+  Future<void> addTaskToBoard(String boardId, Task task) async {
     final boardIndex = _boards.indexWhere((board) => board.id == boardId);
     if (boardIndex != -1) {
       final board = _boards[boardIndex];
       final updatedTasks = [...board.tasks, task];
       _boards[boardIndex] = board.copyWith(tasks: updatedTasks);
+      await _storageService.saveBoard(_boards[boardIndex]);
       notifyListeners();
     }
   }
 
-  void updateTaskInBoard(String boardId, Task updatedTask) {
+  Future<void> updateTaskInBoard(String boardId, Task updatedTask) async {
     final boardIndex = _boards.indexWhere((board) => board.id == boardId);
     if (boardIndex != -1) {
       final board = _boards[boardIndex];
@@ -60,6 +83,7 @@ class BoardProvider extends ChangeNotifier {
         final updatedTasks = [...board.tasks];
         updatedTasks[taskIndex] = updatedTask;
         _boards[boardIndex] = board.copyWith(tasks: updatedTasks);
+        await _storageService.saveBoard(_boards[boardIndex]);
         notifyListeners();
       }
     }

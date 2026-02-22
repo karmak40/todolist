@@ -90,8 +90,9 @@ class _BoardScreenState extends State<BoardScreen> {
                                   initialDate: DateTime.now(),
                                   boardProvider: widget.boardProvider,
                                   initialBoardId: board.id,
-                                  onTaskAdded: (task) {
-                                    widget.boardProvider.addTaskToBoard(board.id, task);
+                                  onTaskAdded: (task) async {
+                                    await widget.boardProvider.addTaskToBoard(board.id, task);
+                                    // ignore: use_build_context_synchronously
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('Задание добавлено в ${board.name}'),

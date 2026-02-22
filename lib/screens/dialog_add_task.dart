@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/task.dart';
 import '../constants/app_constants.dart';
 import '../providers/board_provider.dart';
 
 class AddTaskDialog extends StatefulWidget {
   final DateTime initialDate;
-  final Function(Task) onTaskAdded;
+  final FutureOr<void> Function(Task) onTaskAdded;
   final BoardProvider? boardProvider;
   final String? initialBoardId;
 
@@ -51,7 +52,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
     super.dispose();
   }
 
-  void _addTask() {
+  Future<void> _addTask() async {
     if (titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Пожалуйста, введите название задачи')),
@@ -68,7 +69,8 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
       boardId: selectedBoardId,
     );
 
-    widget.onTaskAdded(task);
+    await widget.onTaskAdded(task);
+    if (!mounted) return;
     Navigator.of(context).pop();
   }
 

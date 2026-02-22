@@ -1,9 +1,17 @@
-import '../models/task.dart';
+import 'package:hive/hive.dart';
+import 'task.dart';
 
+part 'board.g.dart';
+
+@HiveType(typeId: 1)
 class Board {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String name;
+  @HiveField(2)
   final String icon;
+  @HiveField(3)
   final List<Task> tasks;
 
   Board({

@@ -1,12 +1,25 @@
+import 'package:hive/hive.dart';
+
+part 'task.g.dart';
+
+@HiveType(typeId: 0)
 class Task {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String title;
+  @HiveField(2)
   final String description;
+  @HiveField(3)
   final int durationMinutes;
+  @HiveField(4)
   DateTime date;
+  @HiveField(5)
   bool isCompleted;
-  final String? userIcon; // URL or asset path
-  final String? boardId; // Board reference
+  @HiveField(6)
+  final String? userIcon;
+  @HiveField(7)
+  final String? boardId;
 
   Task({
     required this.id,
