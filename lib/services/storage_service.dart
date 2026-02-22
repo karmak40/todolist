@@ -1,13 +1,17 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/task.dart';
 import '../models/board.dart';
+import '../models/user.dart';
 
 class StorageService {
   static const String tasksBoxName = 'tasks';
   static const String boardsBoxName = 'boards';
+  static const String userBoxName = 'user';
+  static const String userKey = 'current_user';
 
   late Box<Task> _tasksBox;
   late Box<Board> _boardsBox;
+  late Box<User> _userBox;
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -19,10 +23,14 @@ class StorageService {
     if (!Hive.isAdapterRegistered(1)) {
       Hive.registerAdapter(BoardAdapter());
     }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(UserAdapter());
+    }
 
     // Open boxes
     _tasksBox = await Hive.openBox<Task>(tasksBoxName);
     _boardsBox = await Hive.openBox<Board>(boardsBoxName);
+    _userBox = await Hive.openBox<User>(userBoxName);
   }
 
   // Tasks operations
@@ -65,6 +73,19 @@ class StorageService {
 
   Future<void> clearAllBoards() async {
     await _boardsBox.clear();
+  }
+
+  // User operations
+  Future<void> saveUser(User user) async {
+    await _userBox.put(userKey, user);
+  }
+
+  User? getUser() {
+    return _userBox.get(userKey);
+  }
+
+  Future<void> deleteUser() async {
+    await _userBox.delete(userKey);
   }
 
   // Cleanup

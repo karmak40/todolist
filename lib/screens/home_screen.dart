@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../models/task.dart';
 import '../models/user.dart';
 import '../models/board.dart';
@@ -9,6 +10,7 @@ import '../constants/app_constants.dart';
 import 'dialog_add_task.dart';
 import 'task_detail_screen.dart';
 import 'board_screen.dart';
+import 'settings_screen.dart';
 import '../providers/board_provider.dart';
 import '../services/storage_service.dart';
 
@@ -26,12 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final boardProvider = BoardProvider();
   final _storageService = StorageService();
 
-  // Sample user
-  final user = User(
-    id: '1',
-    name: 'Пользователь',
-    avatarUrl: null,
-  );
+  // User - will be loaded from storage
+  late User user;
 
   // Sample tasks
   final List<Task> allTasks = [
@@ -88,6 +86,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initializeBoardProvider() async {
     await boardProvider.init();
     await _storageService.init();
+    
+    // Load or create user
+    final storedUser = _storageService.getUser();
+    if (storedUser != null) {
+      user = storedUser;
+    } else {
+      user = User(
+        id: '1',
+        name: 'Пользователь',
+        avatarUrl: null,
+      );
+      await _storageService.saveUser(user);
+    }
+    
+    // Load tasks
     final loadedTasks = _storageService.getAllTasks();
     setState(() {
       if (loadedTasks.isNotEmpty) {
@@ -253,36 +266,70 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // User avatar and greeting
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       CircleAvatar(
                         radius: 30,
                         backgroundColor: AppConstants.cardBackgroundColor,
-                        child: const Icon(
-                          Icons.person,
-                          size: 40,
-                          color: AppConstants.textSecondary,
-                        ),
+                        backgroundImage: user.avatarUrl != null
+                            ? FileImage(File(user.avatarUrl!))
+                            : null,
+                        child: user.avatarUrl == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 40,
+                                color: AppConstants.textSecondary,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            getGreeting(),
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppConstants.accentColor,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              getGreeting(),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppConstants.accentColor,
+                              ),
                             ),
-                          ),
-                          Text(
-                            user.name,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppConstants.textSecondary,
+                            Text(
+                              user.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppConstants.textSecondary,
+                              ),
                             ),
+                          ],
+                        ),
+                      ),
+                      // Settings button
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => SettingsScreen(
+                                user: user,
+                                storageService: _storageService,
+                                onUserUpdated: (updatedUser) {
+                                  setState(() {
+                                    user = updatedUser;
+                                  });
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.settings,
+                            color: AppConstants.accentColor,
+                            size: 40,
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
